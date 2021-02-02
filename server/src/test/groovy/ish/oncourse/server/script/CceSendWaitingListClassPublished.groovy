@@ -1,6 +1,7 @@
 package ish.oncourse.server.script
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.server.ICayenneService
 import ish.oncourse.server.cayenne.CourseClass
 import ish.oncourse.server.cayenne.Script
@@ -81,7 +82,7 @@ class CceSendWaitingListClassPublished extends CayenneIshTestCase {
         Script script = prepareScript("../private-resources/cce/scripts/CCE-send-waitingList-class-published-CRON.groovy")
 
         result = ScriptRun.valueOf(script, bindings, parameters, context).run()
-        Assert.assertEquals(ScriptResult.ResultType.SUCCESS, result.getType())
+        Assert.assertEquals(TaskResultType.SUCCESS, result.getType())
         checkEmailBindings()
     }
 

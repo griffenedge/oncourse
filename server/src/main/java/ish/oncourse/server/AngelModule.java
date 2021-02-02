@@ -33,6 +33,7 @@ import ish.oncourse.server.api.servlet.ApiFilter;
 import ish.oncourse.server.api.servlet.ISessionManager;
 import ish.oncourse.server.api.servlet.ResourceServlet;
 import ish.oncourse.server.api.servlet.SessionManager;
+import ish.oncourse.server.cluster.ClusteredExecutorManager;
 import ish.oncourse.server.db.AngelCayenneModule;
 import ish.oncourse.server.integration.EventService;
 import ish.oncourse.server.integration.PluginService;
@@ -154,6 +155,7 @@ public class AngelModule extends ConfigModule {
         binder.bind(String.class).annotatedWith(Names.named(ANGEL_VERSION)).toInstance(getVersion());
         binder.bind(EmailService.class).in(Scopes.SINGLETON);
         binder.bind(PluginService.class).in(Scopes.SINGLETON);
+        binder.bind(ClusteredExecutorManager.class).in(Scopes.SINGLETON);
         PluginService.configurePlugin(binder);
     }
 

@@ -4,8 +4,8 @@
  */
 package ish.oncourse.server.print
 
-import groovy.transform.CompileStatic
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.cayenne.PaymentInterface
 import ish.oncourse.cayenne.PersistentObjectI
 import ish.oncourse.common.ResourcesUtil
@@ -16,10 +16,10 @@ import ish.oncourse.server.cayenne.PaymentOut
 import ish.oncourse.server.cayenne.Report
 import ish.oncourse.server.cayenne.ReportOverlay
 import ish.oncourse.server.cayenne.glue.CayenneDataObject
+import ish.oncourse.server.cluster.TaskResult
 import ish.oncourse.server.upgrades.DataPopulation
 import ish.print.AdditionalParameters
 import ish.print.PrintRequest
-import ish.print.PrintResult.ResultType
 import ish.print.PrintTransformationsFactory
 import ish.util.EntityUtil
 import org.apache.cayenne.ObjectContext
@@ -219,13 +219,13 @@ class ReportPrintingTest extends CayenneIshTestCase {
         logger.warn("printing {}", request)
         worker.run()
 
-        while (ResultType.IN_PROGRESS == worker.getResult().getResultType()) {
+        while (TaskResultType.IN_PROGRESS == worker.getResult().getType()) {
 			Thread.sleep(200)
         }
 
-		assertEquals(String.format("Printing failed for %s", report.getName()), ResultType.SUCCESS, worker.getResult().getResultType())
-        assertNotNull(String.format("Empty printing result for %s", report.getName()), worker.getResult().getResult())
+		assertEquals(String.format("Printing failed for %s", report.getName()), TaskResult.ResultType.SUCCESS, worker.getResult().getType())
+        assertNotNull(String.format("Empty printing result for %s", report.getName()), worker.getResult().getData())
 
-        FileUtils.writeByteArrayToFile(new File("build/test-data/printing/"+reportFolder+"/"+report.getName()+"-"+sourceEntity+".pdf"), worker.getResult().getResult())
+        FileUtils.writeByteArrayToFile(new File("build/test-data/printing/"+reportFolder+"/"+report.getName()+"-"+sourceEntity+".pdf"), worker.getResult().getData())
     }
 }

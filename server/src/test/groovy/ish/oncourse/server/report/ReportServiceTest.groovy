@@ -5,6 +5,7 @@
 package ish.oncourse.server.report
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.cayenne.PersistentObjectI
 import ish.oncourse.common.ResourceType
 import ish.oncourse.common.ResourcesUtil
@@ -15,7 +16,6 @@ import ish.oncourse.server.document.DocumentService
 import ish.oncourse.server.integration.PluginService
 import ish.oncourse.server.print.PrintWorker
 import ish.print.PrintRequest
-import ish.print.PrintResult
 import ish.report.ImportReportResult
 import static ish.report.ImportReportResult.ReportValidationError.ReportBuildingError
 import net.sf.jasperreports.engine.DefaultJasperReportsContext
@@ -233,16 +233,16 @@ class ReportServiceTest extends CayenneIshTestCase {
 
         worker.run()
 
-        while (PrintResult.ResultType.IN_PROGRESS.equals(worker.getResult().getResultType())) {
+        while (TaskResultType.IN_PROGRESS == worker.getResult().getType()) {
 			Thread.sleep(200)
         }
-		if (worker.getResult().getResultType() != PrintResult.ResultType.SUCCESS) {
+		if (worker.getResult().getType() != TaskResultType.SUCCESS) {
 			logger.warn("print has failed : {}", worker.getResult())
         }
-		assertEquals(String.format("Printing failed for %s", report.getName()), PrintResult.ResultType.SUCCESS, worker.getResult().getResultType())
-        assertNotNull(String.format("Empty printing result for %s", report.getName()), worker.getResult().getResult())
+		assertEquals(String.format("Printing failed for %s", report.getName()), TaskResultType.SUCCESS, worker.getResult().getType())
+        assertNotNull(String.format("Empty printing result for %s", report.getName()), worker.getResult().getData())
 
-        FileUtils.writeByteArrayToFile(new File("build/test-data/ReportPrintServiceTest/testCustomFontReport.pdf"), worker.getResult().getResult())
+        FileUtils.writeByteArrayToFile(new File("build/test-data/ReportPrintServiceTest/testCustomFontReport.pdf"), worker.getResult().getData())
     }
 
 	@Test
@@ -290,11 +290,11 @@ class ReportServiceTest extends CayenneIshTestCase {
 
         worker.run()
 
-        while (PrintResult.ResultType.IN_PROGRESS.equals(worker.getResult().getResultType())) {
+        while (TaskResultType.IN_PROGRESS.equals(worker.getResult().getType())) {
 			Thread.sleep(200)
         }
 
-		assertEquals(String.format("Printing failed for %s", report.getName()), PrintResult.ResultType.FAILED, worker.getResult().getResultType())
+		assertEquals(String.format("Printing failed for %s", report.getName()), TaskResultType.FAILURE, worker.getResult().getType())
         assertNotNull(String.format("Empty error for %s", report.getName()), worker.getResult().getError())
     }
 
@@ -351,11 +351,11 @@ class ReportServiceTest extends CayenneIshTestCase {
 
         worker.run()
 
-        while (PrintResult.ResultType.IN_PROGRESS.equals(worker.getResult().getResultType())) {
+        while (TaskResultType.IN_PROGRESS.equals(worker.getResult().getType())) {
 			Thread.sleep(200)
         }
 
-		assertEquals(String.format("Printing failed for %s", report.getName()), PrintResult.ResultType.FAILED, worker.getResult().getResultType())
+		assertEquals(String.format("Printing failed for %s", report.getName()), TaskResultType.FAILURE, worker.getResult().getType())
         assertNotNull(String.format("Empty error for %s", report.getName()), worker.getResult().getError())
         context.deleteObject(report)
     }
@@ -398,11 +398,11 @@ class ReportServiceTest extends CayenneIshTestCase {
 
         worker.run()
 
-        while (PrintResult.ResultType.IN_PROGRESS.equals(worker.getResult().getResultType())) {
+        while (TaskResultType.IN_PROGRESS.equals(worker.getResult().getType())) {
 			Thread.sleep(200)
         }
 
-		assertEquals(String.format("Printing failed for %s", report.getName()), PrintResult.ResultType.FAILED, worker.getResult().getResultType())
+		assertEquals(String.format("Printing failed for %s", report.getName()), TaskResultType.FAILURE, worker.getResult().getType())
         assertNotNull(String.format("Empty error for %s", report.getName()), worker.getResult().getError())
     }
 

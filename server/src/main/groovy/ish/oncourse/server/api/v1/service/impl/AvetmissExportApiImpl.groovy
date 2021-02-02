@@ -12,8 +12,12 @@
 package ish.oncourse.server.api.v1.service.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.io.Files
 import com.google.inject.Inject
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import ish.common.types.OutcomeStatus
+import ish.common.types.TaskResultType
 import ish.oncourse.common.ExportJurisdiction
 import ish.oncourse.entity.services.CertificateService
 import ish.oncourse.entity.services.OutcomeService
@@ -30,17 +34,14 @@ import ish.oncourse.server.cayenne.FundingUpload
 import ish.oncourse.server.cayenne.FundingUploadOutcome
 import ish.oncourse.server.cayenne.Outcome
 import ish.oncourse.server.cayenne.SystemUser
-import ish.oncourse.server.concurrent.ExecutorManager
+import ish.oncourse.server.cluster.ClusteredExecutorManager
+import ish.oncourse.server.cluster.TaskResult
 import ish.oncourse.server.export.avetmiss.AvetmissExportResult
 import ish.oncourse.server.export.avetmiss8.Avetmiss8ExportRunner
 import ish.oncourse.server.users.SystemUserService
 import ish.oncourse.types.FundingStatus
-import ish.persistence.GetInExpression
 import org.apache.cayenne.ObjectContext
-import org.apache.cayenne.access.DataContext
-import org.apache.cayenne.query.ObjectSelect
 import org.apache.cayenne.query.SelectById
-import org.apache.cayenne.tx.TransactionalOperation
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
@@ -74,7 +75,7 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
     private SystemUserService systemUserService
 
     @Inject
-    private ExecutorManager executorManager
+    private ClusteredExecutorManager executorManager
     
     private ExecutorService executorService = Executors.newSingleThreadExecutor()
 
@@ -84,9 +85,9 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
 
         logger.warn("AVETMISS export started. Parameters: {}", requestParameters.toString())
 
-        executorManager.submit(new Callable<File>() {
+        executorManager.submit(new Callable<TaskResult>() {
             @Override
-            File call() throws Exception {
+            TaskResult call() throws Exception {
                 String settings = null
                 AvetmissExportResult result
                 ExportJurisdiction exportJurisdiction = ExportJurisdiction.values().find { it.displayName == requestParameters.settings.flavour.toString() }
@@ -114,7 +115,8 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
                 System.out.println("Create uploads: ${end/1000}")
 
                 String zipName = 'avetmiss8.zip'
-                ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream(zipName))
+                def stream = new ByteArrayOutputStream()
+                ZipOutputStream zipFile = new ZipOutputStream(stream)
                 result.files.each { filename, data ->
                     ZipEntry entry = new ZipEntry(filename)
                     def databytes= data.toByteArray()
@@ -125,7 +127,10 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
                 }
                 zipFile.close()
 
-                return new File(zipName)
+                TaskResult output = new TaskResult(TaskResultType.SUCCESS);
+                output.setName(zipName)
+                output.setData(stream.toByteArray())
+                output
             }
         })
     }
@@ -169,9 +174,9 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
 
         logger.warn("AVETMISS search outcomes started. Parameters: {}", settings.toString())
 
-        executorManager.submit(new Callable<List<AvetmissExportOutcomeDTO>>() {
+        executorManager.submit(new Callable<TaskResult>() {
             @Override
-            List<AvetmissExportOutcomeDTO> call() throws Exception {
+            TaskResult call() throws Exception {
                 Set<Outcome> outcomes =  Avetmiss8ExportRunner.getOutcomes(settings.classIds,
                         settings.enrolmentIds,
                         settings.fundingContracts,
@@ -181,7 +186,12 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
                         settings.fee.collect {it.dbType},
                         settings.flavour.dbType,
                         cayenneService.newContext)
-                return new AvetmissExportPreviewBuilder(outcomes).build()
+
+                def json = JsonOutput.toJson(new AvetmissExportPreviewBuilder(outcomes).build())
+
+                TaskResult output = new TaskResult(TaskResultType.SUCCESS);
+                output.setData(json.bytes)
+                output
             }
         })
     }
@@ -189,7 +199,11 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
     @Override
     File getExport(String processId) {
         try {
-            executorManager.getResult(processId) as File
+            // TODO: change API to send byte[] directly
+            def result = executorManager.getResult(processId) as TaskResult
+            def file = new File(result.getName())
+            Files.write(result.data, file)
+            file
         } catch (Exception e) {
             logger.catching(e)
             throw new ClientErrorException(Response.status(Response.Status.BAD_REQUEST).entity(new ValidationErrorDTO(null, null, e.message)).build())
@@ -199,7 +213,9 @@ class AvetmissExportApiImpl implements AvetmissExportApi {
     @Override
     List<AvetmissExportOutcomeDTO> getExportOutcomes(String processId) {
         try {
-            executorManager.getResult(processId) as List<AvetmissExportOutcomeDTO>
+            TaskResult result = executorManager.getResult(processId) as TaskResult
+            def jsonSlurper = new JsonSlurper()
+            jsonSlurper.parse(result.data) as List<AvetmissExportOutcomeDTO>
         } catch (Exception e) {
             logger.catching(e)
             throw new ClientErrorException(Response.status(Response.Status.BAD_REQUEST).entity(new ValidationErrorDTO(null, null, e.message)).build())

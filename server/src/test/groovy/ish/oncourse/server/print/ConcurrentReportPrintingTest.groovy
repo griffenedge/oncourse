@@ -5,6 +5,7 @@
 package ish.oncourse.server.print
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.cayenne.PaymentInterface
 import ish.oncourse.cayenne.PersistentObjectI
 import ish.oncourse.common.ResourceType
@@ -178,7 +179,7 @@ class ConcurrentReportPrintingTest extends CayenneIshTestCase {
 			int workersRunning = 0
             Thread.sleep(200)
             for (PrintWorker w : reportsToRun.values()) {
-				if (PrintResult.ResultType.IN_PROGRESS.equals(w.getResult().getResultType())) {
+				if (TaskResultType.IN_PROGRESS == w.getResult().getType()) {
 					workersRunning = workersRunning + 1
                 }
 			}
@@ -186,11 +187,11 @@ class ConcurrentReportPrintingTest extends CayenneIshTestCase {
         }
 
             for (Map.Entry<PrintRequest, PrintWorker> e : reportsToRun.entrySet()) {
-			assertEquals(String.format("Printing failed for %s", e.getKey().getReportCode()), PrintResult.ResultType.SUCCESS, e.getValue().getResult().getResultType())
-            assertNotNull(String.format("Empty printing result for %s",  e.getKey().getReportCode()), e.getValue().getResult().getResult())
+			assertEquals(String.format("Printing failed for %s", e.getKey().getReportCode()), PrintResult.ResultType.SUCCESS, e.getValue().getResult().getType())
+            assertNotNull(String.format("Empty printing result for %s",  e.getKey().getReportCode()), e.getValue().getResult().getData())
 
 
-            FileUtils.writeByteArrayToFile(new File("build/test-data/concurrentReportTestOutput/"+e.getKey().getReportCode()+".pdf"), e.getValue().getResult().getResult())
+            FileUtils.writeByteArrayToFile(new File("build/test-data/concurrentReportTestOutput/"+e.getKey().getReportCode()+".pdf"), e.getValue().getResult().getData())
         }
 	}
 }

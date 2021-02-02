@@ -1,6 +1,7 @@
 package ish.oncourse.server.querying
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.server.ICayenneService
 import ish.oncourse.server.cayenne.Script
 import ish.oncourse.server.cayenne.Student
@@ -250,8 +251,8 @@ class QuerySpecWithRelativeDatesTest extends CayenneIshTestCase{
 
         ScriptResult result = scriptService.runScript(script, ScriptParameters.empty(), context)
 
-        if (result.getType() == ScriptResult.ResultType.SUCCESS)
-            assertEquals(expectedResult, result.getResultValue().toString())
+        if (result.getType() == TaskResultType.SUCCESS)
+            assertEquals(expectedResult, new String(result.getData()))
         else
             fail("Incorrect syntax: " + result.error)
     }

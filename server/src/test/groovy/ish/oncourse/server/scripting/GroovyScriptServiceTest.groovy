@@ -4,6 +4,7 @@
 package ish.oncourse.server.scripting
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.server.ICayenneService
 import ish.oncourse.server.cayenne.Contact
 import ish.oncourse.server.cayenne.Course
@@ -68,7 +69,7 @@ class GroovyScriptServiceTest extends CayenneIshTestCase {
 				"void test() {logger.error('script method test')}")
         ScriptResult result = scriptService.runScript(script, ScriptParameters.empty(), cayenneService.getNewContext())
 
-        assertEquals(ScriptResult.ResultType.SUCCESS, result.getType())
+        assertEquals(TaskResultType.SUCCESS, result.getType())
     }
 
 	@Test
@@ -81,8 +82,9 @@ class GroovyScriptServiceTest extends CayenneIshTestCase {
 
         ScriptResult result = scriptService.runScript(script, ScriptParameters.empty(), cayenneService.getNewContext())
 
-        assertEquals(ScriptResult.ResultType.SUCCESS, result.getType())
-        assertEquals(Boolean.TRUE, result.getResultValue())
+        assertEquals(TaskResultType.SUCCESS, result.getType())
+        assertEquals(Boolean.TRUE, result.getLocalResult())
+        assertEquals(Boolean.TRUE.toString(), new String(result.getData()))
     }
 
 	@Test
@@ -95,9 +97,9 @@ class GroovyScriptServiceTest extends CayenneIshTestCase {
 
         ScriptResult result = scriptService.runScript(script, ScriptParameters.empty(), cayenneService.getNewContext())
 
-        assertEquals(ScriptResult.ResultType.FAILURE, result.getType())
-        assertNotNull(result.getError())
-        assertNull(result.getResultValue())
+        assertEquals(TaskResultType.FAILURE, result.getType())
+        assertNotNull(result.error)
+        assertNull(result.data)
     }
 
 	@Test
@@ -113,8 +115,8 @@ class GroovyScriptServiceTest extends CayenneIshTestCase {
                         ScriptParameters.empty().add("test", "testValue"),
                         cayenneService.getNewContext())
 
-        assertEquals(ScriptResult.ResultType.SUCCESS, result.getType())
-        assertEquals("testValue", result.getResultValue())
+        assertEquals(TaskResultType.SUCCESS, result.getType())
+        assertEquals("testValue", new String((byte[])result.getData()))
     }
 
 	@Test

@@ -1,12 +1,12 @@
 package ish.oncourse.server.querying
 
 import ish.CayenneIshTestCase
+import ish.common.types.TaskResultType
 import ish.oncourse.server.ICayenneService
 import ish.oncourse.server.cayenne.Script
 import ish.oncourse.server.scripting.GroovyScriptService
 import ish.oncourse.server.scripting.ScriptParameters
 import ish.scripting.ScriptResult
-import org.apache.commons.lang3.ArrayUtils
 import org.dbunit.dataset.ReplacementDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
@@ -316,8 +316,8 @@ class QuerySpecTest extends CayenneIshTestCase {
 
         ScriptResult result = scriptService.runScript(script, ScriptParameters.empty(), cayenneService.getNewContext())
 
-        if (result.getType() == ScriptResult.ResultType.SUCCESS)
-            assertEquals(this.result, result.getResultValue().toString())
+        if (result.getType() == TaskResultType.SUCCESS)
+            assertEquals(this.result, new String((byte[])result.getData()))
         else
             fail("Incorrect syntax: " + result.error)
     }

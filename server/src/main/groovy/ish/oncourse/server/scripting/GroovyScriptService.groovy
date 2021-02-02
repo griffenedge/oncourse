@@ -15,6 +15,7 @@ import com.google.inject.Injector
 import groovy.transform.CompileStatic
 import ish.common.types.EntityEvent
 import ish.common.types.SystemEventType
+import ish.common.types.TaskResultType
 import ish.common.types.TriggerType
 import static ish.common.types.TriggerType.CRON
 import static ish.common.types.TriggerType.ENTITY_EVENT
@@ -44,8 +45,6 @@ import ish.oncourse.server.services.ISystemUserService
 import ish.oncourse.server.users.SystemUserService
 import ish.oncourse.types.AuditAction
 import ish.scripting.ScriptResult
-import static ish.scripting.ScriptResult.ResultType.FAILURE
-import static ish.scripting.ScriptResult.ResultType.SUCCESS
 import ish.util.TimeZoneUtil
 import org.apache.cayenne.ObjectContext
 import org.apache.cayenne.Persistent
@@ -502,10 +501,10 @@ class GroovyScriptService {
         def localScript = localContext.localObject(script)
 
         switch (result.getType()) {
-            case SUCCESS:
+            case TaskResultType.SUCCESS:
                 auditService.submit(localScript, AuditAction.SCRIPT_EXECUTED, String.format("Script '%s' executed successfully.", localScript.getName()))
                 break
-            case FAILURE:
+            case TaskResultType.FAILURE:
                 auditService.submit(localScript, AuditAction.SCRIPT_FAILED, String.format("Script '%s' failed: %s", localScript.getName(), result.getError()))
                 break
             default:
