@@ -45,6 +45,7 @@ trait AutomationBindingTrait {
             switch (dataType) {
                 case FILE:
                     return valueString.getBytes()
+                case OBJECT:
                 case MESSAGE_TEMPLATE:
                 case TEXT:
                     return valueString
